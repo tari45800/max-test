@@ -1,3 +1,67 @@
+.test{
+  justify-content: flex-start;
+  word-spacing: 10px;
+  overflow: hidden;
+  border: none;
+  border-bottom: 1px solid rgb(230, 230, 230);
+  margin-top: 20px;
+  outline: none;
+  margin-bottom: 30px;
+  font-weight: normal;
+  text-align: center;
+
+  width: 0px;
+  height: 0px;
+  margin: 0px;
+  padding: 0px;
+  margin-bottom: 20px;
+  background-color: tomato;
+  background-color: white;
+  color: white;
+  color: red;
+  color: blue;
+  color: rgba(0, 0, 0, 0.301);
+
+  opacity: 0.3;
+  background-color: #FAEEED;
+
+  border: 1px solid red ;
+  border: 2px solid blueviolet ;
+  border-radius: 50%;
+
+  text-align: start;
+  font-weight: bold;
+  font-size: 50px;
+
+  max-width: 150px;
+  position: relative;
+  z-index: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  bottom: 0;
+  right: 0;
+
+  display: flex;
+  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  height: 100vh;
+  flex-direction: column;
+  flex-grow: 1;
+  flex-wrap: wrap;
+
+  display: none;
+  display: block;
+  display: inline-block;
+
+  transition: 0.5s;
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
+}
+
 .App {
   text-align: center;
 }

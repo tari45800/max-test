@@ -1,11 +1,15 @@
 import logo from './logo.svg';
 import './App.css';
+import GlobalStyle from './GlobalStyles';
+import PracticeLayout1 from './layout/practic1'
+import EasyLogin from './firebase/loginPage';
 
 function App() {
   return (
-    <div className="App">
-
-    </div>
+    <>
+      <GlobalStyle></GlobalStyle>
+      <EasyLogin></EasyLogin>
+    </>
   );
 }
 
