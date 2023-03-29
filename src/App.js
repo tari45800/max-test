@@ -1,14 +1,12 @@
-import logo from './logo.svg';
-import './App.css';
 import GlobalStyle from './GlobalStyles';
-import PracticeLayout1 from './layout/practic1'
-import EasyLogin from './firebase/loginPage';
+import PracticeLayout2 from './layout/practic2'
+import Client from './fetch/client/client';
 
 function App() {
   return (
     <>
-      <GlobalStyle></GlobalStyle>
-      <EasyLogin></EasyLogin>
+      {/* <GlobalStyle></GlobalStyle> */}
+      <Client></Client>
     </>
   );
 }
