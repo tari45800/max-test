@@ -1,15 +1,16 @@
 import GlobalStyle from './GlobalStyles';
-import PracticeLayout2 from './layout/practic2'
-import Client from './fetch/client/client';
-import Bg from './bg/bg';
-import Algorithm from './algorithm/algolithm';
+import Header from './layout2/Header';
+import MainSlide from './layout2/MainSlide';
+import Display from './layout2/Display';
 
 
 function App() {
   return (
     <>
       <GlobalStyle></GlobalStyle>
-      <Algorithm></Algorithm>
+      <Header></Header>
+      <MainSlide></MainSlide>
+      <Display></Display>
     </>
   );
 }
