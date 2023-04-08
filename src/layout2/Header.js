@@ -2,6 +2,7 @@ import styled from "styled-components";
 
 const HeaderContainer = styled.div`
   border: 2px solid red;
+  
 `
 
 function Header(){
