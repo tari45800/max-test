@@ -1,18 +1,13 @@
 import GlobalStyle from './GlobalStyles';
-import Header from './layout2/Header';
-import MainSlide from './layout2/MainSlide';
-import Display from './layout2/Display';
-
+import MyComponent from './layout2/asd';
+import Calusal from './layout/calusal';
 
 function App() {
   return (
     <>
       <GlobalStyle></GlobalStyle>
-      <Header></Header>
-      <MainSlide></MainSlide>
-      <Display></Display>
+      <Calusal></Calusal>
     </>
-  );
-}
+  )}
 
 export default App;
