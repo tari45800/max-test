@@ -100,7 +100,7 @@ function ChatRoom(){
 
   useEffect(() => {
     console.log('@@@서버와 시도중@@@');
-    socketRef.current = new SockJS('https://7f13-222-107-28-53.ngrok-free.app/stomp');
+    socketRef.current = new SockJS('https://7ec1-211-193-143-25.ngrok-free.app/stomp');
 
     
 

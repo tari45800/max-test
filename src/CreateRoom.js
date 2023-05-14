@@ -1,357 +1,166 @@
-/*
- * (C) Copyright 2014 Kurento (http://kurento.org/)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * Modified By : SeJonJnag <wkdtpwhs@gmail.com>
- *
- */
+import SockJS from 'sockjs-client';
+import React, { useState } from 'react';
+import kurentoUtils from 'kurento-utils';
 
-// var script = document.createElement('script');
-// script.src = "https://code.jquery.com/jquery-3.6.1.min.js";
-// document.head.appendChild(script);
+function CreateRoom() {
+  const ws = new SockJS('https://7ec1-211-193-143-25.ngrok-free.app/groupcall');
+  const [participants, setParticipants] = useState([]);
+  const [rtcPeer, setRtcPeer] = useState({ writable: null});
+  const [ participant, setParticipantt ] = useState('');
+  const name = '이제윤';
+  const roomId = '이제윤의 room'
 
-// websocket 연결 확인 후 register() 실행
-var ws = new WebSocket('wss://' + location.host + '/signal');
-
-// 연결 되었을 때 실행 되는 코드
-ws.onopen = () => {
-  register();
-}
-
-// console.log("location.host : "+location.host)
-var participants = {};
-
-let name = null;
-let roomId = null;
-let roomName = null;
-
-const constraints = {
-  // 'volume', 'channelCount', 'echoCancellation', 'autoGainControl', 'noiseSuppression', 'latency', 'sampleSize', 'sampleRate'
-  audio: {
-      autoGainControl: false,
-      channelCount: 2,
-      echoCancellation: false,
-      latency: 0,
-      noiseSuppression: false,
-      sampleRate: 48000,
-      sampleSize: 16,
-      volume: 1.0
-  },
-  video: {
-      width: 1200,
-      height: 1000,
-      maxFrameRate: 50,
-      minFrameRate: 40
+  ws.onopen = () => {
+    console.log('연결됨')
+    sendJoin()
   }
-};
 
-// 웹 종료 시 실행
-window.onbeforeunload = function () {
-    ws.close();
-};
-
-// 받아온 데이터를 처리하는 코드 
-ws.onmessage = function (message) {
-
-  // 자바스크립트에서 읽을 수 있는 데이터로 바꿔주는 코드 
-  var parsedMessage = JSON.parse(message.data);
-  console.info('Received message: ' + message.data);
-
-  // 받아온 아이디가 아이디에 따라서 
-  switch (parsedMessage.id) {
-    case 'existingParticipants':
-        onExistingParticipants(parsedMessage);
-        break;
-    case 'newParticipantArrived':
-        onNewParticipant(parsedMessage);
-        break;
-    case 'participantLeft':
-        onParticipantLeft(parsedMessage);
-        break;
-    case 'receiveVideoAnswer':
-        receiveVideoResponse(parsedMessage);
-        break;
-    case 'iceCandidate':
-        participants[parsedMessage.name].rtcPeer.addIceCandidate(parsedMessage.candidate, function (error) {
-            if (error) {
-                console.error("Error adding candidate: " + error);
-                return;
-            }
-        });
-        break;
-    default:
-        console.error('Unrecognized message', parsedMessage);
-  }
-}
-
-
-function onExistingParticipants(msg) {
-
-  console.log(name + " registered in room " + roomId);
-  var participant = new Participant(name);
-  participants[name] = participant;
-  var video = participant.getVideoElement();
-
-  var options = {
-      localVideo: video,
-      mediaConstraints: constraints,
-      onicecandidate: participant.onIceCandidate.bind(participant)
-  }
-  participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options,
-      function (error) {
-          if (error) {
-              return console.error(error);
-          }
-          this.generateOffer(participant.offerToReceiveVideo.bind(participant));
-      });
-
-  msg.data.forEach(receiveVideo);
-}
-
-function onNewParticipant(request) {
-  receiveVideo(request.name);
-}
-
-function onParticipantLeft(request) {
-  console.log('Participant ' + request.name + ' left');
-  var participant = participants[request.name];
-  participant.dispose();
-  delete participants[request.name];
-}
-
-
-
-
-function register() {
-
-    // 닉네임을 가져 온다.
-    name = $("#uuid").val();
-    // 룸 아이디를 가져온다
-    roomId = $("#roomId").val();
-
+  const sendJoin = () => {
     var message = {
-        id: 'joinRoom',
-        name: $("#uuid").val(),
-        room: roomId,
+      id : 'joinRoom',
+      name : name,
+      room : "이제윤의 room",
     }
     sendMessage(message);
-}
+  }
 
-// 메시지 보내는 기능.
-function sendMessage(message) {
-  const jsonMessage = JSON.stringify(message);
-  console.log('Sending message: ' + jsonMessage);
-  ws.send(jsonMessage);
-}
+  // 서버로 부터 응답을 받았을 때
+  ws.onmessage = (message) => {
+    var parsedMessage = JSON.parse(message.data);
+    console.log('Received message: ' + parsedMessage);
 
-
-
-function receiveVideoResponse(result) {
-    participants[result.name].rtcPeer.processAnswer(result.sdpAnswer, function (error) {
-        if (error) return console.error(error);
-    });
-}
-
-function callResponse(message) {
-    if (message.response != 'accepted') {
-        console.info('Call not accepted by peer. Closing call');
-        stop();
-    } else {
-        webRtcPeer.processAnswer(message.sdpAnswer, function (error) {
-            if (error) return console.error(error);
-        });
+    if(parsedMessage.id == 'existingParticipants'){
+      onExistingParticipants(parsedMessage);
+    } else if(parsedMessage.id == 'newParticipantArrived'){
+      onNewParticipant(parsedMessage);
     }
-}
+  }
 
+  function onNewParticipant(request) {
+    receiveVideo(request.name);
+  }  
 
-function leaveRoom() {
-    sendMessage({
-        id: 'leaveRoom'
-    });
+  // 참가전 기존의 참가자들의 정보를 가져오는 코드
+  const onExistingParticipants = (parsedMessage) => {
+    console.log(parsedMessage.data)
 
-    for (var key in participants) {
-        participants[key].dispose();
+    const constraints = {
+      audio : true,
+      video : {
+        mandatory : {
+          maxWidth : 320,
+          maxFrameRate : 15,
+          minFrameRate : 15
+        }
+      }
+    };
+
+    // 기존 참석자의 비디오 영상을 띄우는 코드
+    console.log(name + " registered in room " + roomId);
+    setParticipantt(setParticipant(name));
+    setParticipants(...participants, participant)
+    const video = participant.container;
+
+    const options = {
+      localVideo: video,
+      mediaConstraints: constraints,
+      onicecandidate: participant.onIceCandidate
     }
 
-    ws.close();
+    participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerSendonly(options,
+      function (error) {
+        if(error) {
+          return console.error(error);
+        }
+        participant.offerToReceiveVideo()
+    });
 
-    location.replace("/");
-}
+    // parsedMessage.data.forEach(receiveVideo);
+  }
 
-function receiveVideo(sender) {
-    var participant = new Participant(sender);
-    participants[sender] = participant;
-    var video = participant.getVideoElement();
+  const receiveVideo = (sender) =>{
+    setParticipantt(setParticipant(name));
+    const video = participant.video;
 
-    var options = {
-        remoteVideo: video,
-        onicecandidate: participant.onIceCandidate.bind(participant)
+    const options = {
+      localVideo: video,
+      onicecandidate: participant.onIceCandidate
     }
 
     participant.rtcPeer = new kurentoUtils.WebRtcPeer.WebRtcPeerRecvonly(options,
-        function (error) {
-            if (error) {
-                return console.error(error);
-            }
-            this.generateOffer(participant.offerToReceiveVideo.bind(participant));
-        });
-}
-
-
-
-
-/** 화면 공유 실행 과정
- * 나와 연결된 다른 peer 에 나의 화면을 공유하기 위해서는 다른 peer 에 보내는 Track 에서 stream 을 교체할 필요가 있다.
- * Track 이란 현재 MediaStream 을 구성하는 각 요소를 의미한다.
- *    - Track 는 오디오, 비디오, 자막 총 3개의 stream 으로 구성된다.
- *    - 때문에 Track 객체는 track[0] = 오디오, track[1] = 비디오 의 배열 구조로 되어있다
- * MediaStream 이란 video stream 과 audio steam 등의 미디어 스트림을 다루는 객체를 이야기한다
- * - stream(스트림)이란 쉽게 생각하자면 비디오와 오디오 데이터라고 이해하면 될 듯 하다 -
- *
- * 즉 상대방에게 보내는 track 에서 나의 웹캠 videoStream 대신 공유 화면에 해당하는 videoStream 으로 변경하는 것이다.
- *
- * 더 구체적으로는 아래 순서를 따른다.
- *
- * 1. startScreenShare() 함수를 호출합니다.
- * 2. ScreenHandler.start() 함수를 호출하여 shareView 변수에 화면 공유에 사용될 MediaStream 객체를 할당합니다.
- * 3. 화면 공유 화면을 로컬 화면에 표시합니다.
- * 4. 연결된 다른 peer에게 화면 공유 화면을 전송하기 위해 RTCRtpSender.replaceTrack() 함수를 사용하여 연결된 다른 peer에게 전송되는 비디오 Track을 shareView.getVideoTracks()[0]으로 교체합니다.
- * 5. shareView 객체의 비디오 Track이 종료되는 경우, stopScreenShare() 함수를 호출하여 화면 공유를 중지합니다.
- * 5. stopScreenShare() 함수에서는 ScreenHandler.end() 함수를 호출하여 shareView 객체에서 발생하는 모든 Track에 대해 stop() 함수를 호출하여 스트림 전송을 중지합니다.
- * 6. 원래 화면으로 되돌리기 위해 연결된 다른 peer에게 전송하는 Track을 로컬 비디오 Track으로 교체합니다.
- * 즉, 해당 코드는 WebRTC 기술을 사용하여 MediaStream 객체를 사용해 로컬에서 받은 Track을 다른 peer로 전송하고, replaceTrack() 함수를 사용하여 비디오 Track을 교체하여 화면 공유를 구현하는 코드입니다.
- * **/
-
-// 화면 공유를 위한 변수 선언
-const screenHandler = new ScreenHandler();
-let shareView = null;
-
-/**
- * ScreenHandler 클래스 정의
- */
-function ScreenHandler() {
-    /**
-     * Cross Browser Screen Capture API를 호출합니다.
-     * Chrome 72 이상에서는 navigator.mediaDevices.getDisplayMedia API 호출
-     * Chrome 70~71에서는 navigator.getDisplayMedia API 호출 (experimental feature 활성화 필요)
-     * 다른 브라우저에서는 screen sharing not supported in this browser 에러 반환
-     * @returns {Promise<MediaStream>} 미디어 스트림을 반환합니다.
-     */
-    function getCrossBrowserScreenCapture() {
-        if (navigator.mediaDevices.getDisplayMedia) {
-            return navigator.mediaDevices.getDisplayMedia({video: true});
-        } else if (navigator.getDisplayMedia) {
-            return navigator.getDisplayMedia({video: true});
-        } else {
-            throw new Error('Screen sharing not supported in this browser');
+      function (error) {
+        if(error) {
+          return console.error(error);
         }
-    }
-
-    /**
-     * 화면 공유를 시작합니다.
-     * @returns {Promise<MediaStream>} 화면 공유에 사용되는 미디어 스트림을 반환합니다.
-     */
-    async function start() {
-        try {
-            shareView = await getCrossBrowserScreenCapture();
-        } catch (err) {
-            console.log('Error getDisplayMedia', err);
-        }
-        return shareView;
-    }
-
-    /**
-     * 화면 공유를 종료합니다.
-     */
-    function end() {
-        if (shareView) {
-            // shareView에서 발생하는 모든 트랙들에 대해 stop() 함수를 호출하여 스트림 전송 중지
-            shareView.getTracks().forEach(track => track.stop());
-            shareView = null;
-        }
-    }
-
-    // 생성자로 반환할 public 변수 선언
-    this.start = start;
-    this.end = end;
-}
-
-/**
- * 스크린 API를 호출하여 원격 화면을 화면 공유 화면으로 교체합니다.
- * @returns {Promise<void>}
- */
-async function startScreenShare() {
-    await screenHandler.start(); // 화면 공유를 위해 ScreenHandler.start() 함수 호출
-
-    let participant = participants[name];
-    let video = participant.getVideoElement();
-    participant.setLocalSteam(video.srcObject);
-    video.srcObject = shareView; // 본인의 화면에 화면 공유 화면 표시
-
-    await participant.rtcPeer.peerConnection.getSenders().forEach(sender => {
-        // 원격 참가자에게도 화면 공유 화면을 전송하도록 RTCRtpSender.replaceTrack() 함수 호출
-        if (sender.track.kind === 'video') {
-            sender.replaceTrack(shareView.getVideoTracks()[0]);
-        }
+        participant.offerToReceiveVideo()
     });
+  }
 
-    // 원격 화면의 화면 공유가 종료되는 경우
-    shareView.getVideoTracks()[0].addEventListener("ended", () => {
-        stopScreenShare();
-    })
-}
+  // 기존 참석자 관련 코드
+  const setParticipant = (name) => {
 
-/**
- * 화면 공유를 중지하고 기존 화상채팅으로 복원합니다.
- * @returns {Promise<void>}
- */
-async function stopScreenShare() {
-    await screenHandler.end(); // 화면 공유를 중지하기 위해 ScreenHandler.end() 함수 호출
-    let participant = participants[name];
-    let video = participant.getVideoElement();
-    video.srcObject = participant.getLocalStream(); // 본인의 화면을 원래의 원격 화면으로 복원
+    const container = (
+      <div className={name} onClick={()=>{console.log('전체화면')}}>
+        <video autoPlay='ture' controls='false'></video>
+        <span>{name}</span>
+      </div>
+      )
 
-    await participant.rtcPeer.peerConnection.getSenders().forEach(sender => {
-        // 원격 참가자에게도 화면 공유를 중지하도록 RTCRtpSender.replaceTrack() 함수 호출
-        if (sender.track.kind === 'video') {
-            sender.replaceTrack(participant.getLocalStream().getVideoTracks()[0]);
-        }
-    });
+    const video = <video autoPlay='ture' controls='false'></video>
 
-// 화면 공유 버튼을 초기화
-    let screenShareBtn = $("#screenShareBtn");
-    screenShareBtn.val("Share Screen");
-    screenShareBtn.data("flag", false);
-}
+    // offer SDP를 생성하는 함수
+    // offer
+    // Offer는 WebRTC의 연결 과정 중 하나로, 로컬 장치가 다른 장치와 연결하고자 할 때 전송하는 메시지입니다
+    // Offer 메시지를 받은 다른 장치는 이에 대한 응답인 Answer 메시지를 생성하게 됩니다.
 
-/**
-
- 화면 공유 버튼을 누르면 화면 공유를 시작하거나 중지합니다.
-
- @returns {Promise<void>}
- */
-async function screenShare() {
-    let screenShareBtn = $("#screenShareBtn");
-    let isScreenShare = screenShareBtn.data("flag");
-
-    if (isScreenShare) { // 이미 화면 공유 중인 경우
-        await stopScreenShare(); // 화면 공유 중지
-        screenShareBtn.val("Share Screen"); // 버튼 텍스트 초기화
-        screenShareBtn.data("flag", false);
-    } else { // 화면 공유 중이 아닌 경우
-        await startScreenShare(); // 화면 공유 시작
-        screenShareBtn.val("Stop Sharing"); // 버튼 텍스트 변경
-        screenShareBtn.data("flag", true);
+    // SDP
+    // SDP(Session Description Protocol)는 미디어 스트림의 전송 정보를 기술하기 위한 형식입니다.
+    const offerToReceiveVideo = (error, offerSdp, wp) => {
+      if(error){
+        return console.error ("sdp offer error")
+      }
+      const message = { id : "receiveVideoFrom",
+        sender : name,
+        sdpOffer : offerSdp
+      };
+      sendMessage(message);
     }
+
+    // ICE Candidate를 생성하고, 생성된 ICE Candidate 정보를 Signaling Server에 전송하는 함수.
+    // ICE (Interactive Connectivity Establishment)는 P2P 연결에서 
+    // NAT, 방화벽 및 기타 네트워크 제한으로 인해 발생할 수 있는 연결 문제를 해결하는 기술입니다.
+    // P2P 연결을 수행할 때, 먼저 각 사용자는 자신의 로컬 네트워크 구성 및 NAT 타입 등과 같은 정보를 수집하여 ICE Candidate를 생성합니다. 
+    // 이후 생성된 ICE Candidate 정보는 다른 사용자와 공유되며, 이를 통해 두 사용자 간 P2P 연결이 수립됩니다.
+    const onIceCandidate = (candidate, wp) => {
+		  var message = {
+		    id: 'onIceCandidate',
+		    candidate: candidate,
+		    name: name
+		  };
+		  sendMessage(message);
+    }
+
+    // writable를 ture로 변경하는 코드
+    const changeRtcPeer = () => {
+      setRtcPeer({ writable: true})
+    }
+
+    return {container, video, onIceCandidate, offerToReceiveVideo, changeRtcPeer};
+  }
+
+  
+  function sendMessage(message) {
+    var jsonMessage = JSON.stringify(message);
+    console.log("이걸 보냈어 : "+jsonMessage)
+    ws.send(jsonMessage);
+  }
+
+  return(
+    <div>
+      <h1>여기는 이미 방 안입니다!</h1>
+      <div className='participants'></div>
+    </div>
+
+  )
 }
+export default CreateRoom;
